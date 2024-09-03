@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using api.Data;
+using api.Dtos.Stock;
+using api.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controller
@@ -20,7 +22,8 @@ namespace api.Controller
         [HttpGet]
         public IActionResult GetAll()
         {
-            var stocks = _context.Stock.ToList();
+            var stocks = _context.Stock.ToList().Select(s => s.ToStockDto());
+            //.Select() is for return imutable list from ToStockDto()
 
             return Ok(stocks);
         }
@@ -35,7 +38,16 @@ namespace api.Controller
                 return NotFound();
             }
 
-            return Ok(stock);
+            return Ok(stock.ToStockDto());
+        }
+
+        [HttpPost]
+        //FromBody is for save to json and not pass the data through url but passing through body of http
+        public IActionResult Create([FromBody] CreateStockRequestDto stockDto){
+            var stockModel = stockDto.ToStockFromCreateDto();
+            _context.Stock.Add(stockModel);
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(GetById), new { id = stockModel.Id}, stockModel.ToStockDto());
         }
     }
 }
